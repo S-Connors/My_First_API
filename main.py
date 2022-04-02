@@ -1,3 +1,8 @@
+#run this in terminal to autoreload
+#uvicorn main:app --reload
+#Press CTRL+C to quit
+#go to http://127.0.0.1:8000
+
 from typing import Optional
 from pydantic import BaseModel
 from fastapi import FastAPI, Path, Query, HTTPException
@@ -37,4 +42,4 @@ def create_trip(start_date: date, trip: Trip):
     return travel[start_date]
 
 #delete trip
-@app.delete("/delete-trip/")
+#@app.delete("/delete-trip/")
