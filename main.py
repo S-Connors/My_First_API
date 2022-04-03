@@ -3,43 +3,63 @@
 #Press CTRL+C to quit
 #go to http://127.0.0.1:8000
 
-from typing import Optional
-from pydantic import BaseModel
+from typing import Optional, List
 from fastapi import FastAPI, Path, Query, HTTPException
-from datetime import date
+from uuid import UUID
+
+from models import User, Pronouns, Role, Updated
 
 #create instance of fastapi
 app = FastAPI()
 
-#create basemodel of data you are entering
-class Trip(BaseModel):
-    country: str
-    city: str
+db: List[User] = [
+User(
+    id = UUID("f9c05069-e185-4f7b-ad45-1af3323098a7"),
+    first_name = "Stephanie",
+    last_name = "Connors",
+    pronouns = Pronouns.she,
+    roles = [Role.admin, Role.user]),
+User(
+    id =UUID("5b2cba3a-c3ba-4c12-9042-16cbd90054b9"),
+    first_name = "Jen",
+    last_name = "Jacobs",
+    pronouns = Pronouns.they,
+    roles = [Role.student, Role.trial_user])
+]
 
-travel = {}
-
-#get (returns info)
-#create homepage
 @app.get("/")
-def home():
-    return travel
+async def root():
+    return {"Hello":"Welcome to my API"}
 
-#search by country
-@app.get("/get-country/{country}")
-def get_country(country: str):
-    for start_date in travel:
-        if travel[start_date].country == country:
-            return travel[start_date]
-    raise HTTPException(status_code=404, detail="Country not found.")
+@app.get("/users")
+async def all_users():
+    return db
 
-#create trip
-@app.post("/create_trip/{start_date}")
-def create_trip(start_date: date, trip: Trip):
-    if start_date in travel:
-        raise HTTPException(status_code=400, detail="Date has already been added.")
+@app.post("/users")
+async def new_user(user: User):
+    db.append(user)
+    return {"id":user.id}
 
-    travel[start_date] = trip
-    return travel[start_date]
+@app.delete("/users/{user_id}")
+async def delete_user(user_id:UUID):
+    for user in db:
+        if user.id == user_id:
+            db.remove(user)
+        raise HTTPException(status_code=404, detail=f"User id: {user_id} does not exist.")
 
-#delete trip
-#@app.delete("/delete-trip/")
+@app.put("/users/{user_id}")
+async def update_user(user_id:UUID, updated: Updated):
+    for user in db:
+        if user.id == user_id:
+            if user.first_name != None:
+                user.first_name = updated.first_name
+            if user.last_name != None:
+                user.last_name = updated.last_name
+            if user.middle_name != None:
+                user.middle_name = updated.middle_name
+            if user.pronouns != None: 
+                user.pronouns = updated.pronouns
+            if user.roles != None:
+                user.roles = updated.roles
+            return user
+        raise HTTPException(status_code=404, detail=f"User id: {user_id} does not exist.")
