@@ -28,19 +28,23 @@ User(
     roles = [Role.student, Role.trial_user])
 ]
 
+#get returns things
 @app.get("/")
 async def root():
     return {"Hello":"Welcome to my API"}
 
+#this returns all users
 @app.get("/users")
 async def all_users():
     return db
 
+#post adds new things
 @app.post("/users/new")
 async def new_user(user: User):
     db.append(user)
     return {"id":user.id}
 
+#deletes users by user id
 @app.delete("/users/delete/{user_id}")
 async def delete_user(user_id:UUID):
     for user in db:
@@ -49,6 +53,8 @@ async def delete_user(user_id:UUID):
             return {f"User id: {user_id}":"Has been removed."}
     raise HTTPException(status_code=404, detail=f"User id: {user_id} does not exist.")
 
+#put edits things
+#changes user first, last, middle name etc.
 @app.put("/users/update/{user_id}")
 async def update_user(user_id:UUID, updated: Updated):
     for user in db:
@@ -66,33 +72,46 @@ async def update_user(user_id:UUID, updated: Updated):
             return user
         raise HTTPException(status_code=404, detail=f"User id: {user_id} does not exist.")
 
+#search by path first and last name
 @app.get("/users/{user_first}/{user_last}")
-async def user_by_name(user_first:str = Path(None, description="The first name of the person you are looking for."), user_last:str = Path(None, description="The last name of the person you are looking for.")):
+async def user_by_full_name(user_first:str = Path(None, description="The first name of the person you are looking for."), user_last:str = Path(None, description="The last name of the person you are looking for.")):
     for user in db:
         if user.first_name == user_first and user.last_name == user_last:
             return [user for user in db if user.first_name == user_first and user.last_name == user_last]
-    raise HTTPException(status_code=404, detail=f"User name: {user_name} {user_last} not found.")
+    raise HTTPException(status_code=404, detail=f"User name: {user_first} {user_last} not found.")
 
+#search by path first name
 @app.get("/users/{user_name}")
-async def user_by_name(user_name:str = Path(None, description="The first name of the person you are looking for.")):
+async def user_by_first_name(user_name:str = Path(None, description="The first name of the person you are looking for.")):
     for user in db:
-        if user.first_name == user_name:
-            return [user for user in db if user.first_name == user_name]
+        return [user for user in db if user.first_name == user_name]
     raise HTTPException(status_code=404, detail=f"User name: {user_name} not found.")
 
+#this is not working.....
+#removed / from they/them pronouns as wouldnt work in path
+#search by path pronoun
 @app.get("/users/{pronoun}")
-async def user_by_pronoun(pronoun:Pronouns = Path(None, description="The pronouns the person wishes to be called.")):
+async def user_by_pronoun(pronoun:Pronouns = Path(None, description="The pronoun the person wishes to be called.")):
     for user in db:
-        if user.pronouns == pronoun:
-            return [usuer for user in db if user.pronouns == pronoun]
+        return [user for user in db if user.pronouns == pronoun]
     raise HTTPException(status_code=404, detail=f"Pronoun: {pronoun} not found.")
 
-@app.get("/users/{role}")
-async def user_by_role(role:Role = Path(None, description="The role you wish to look up.")):
+#this is not working...
+#search by query roles
+@app.get("/users")
+async def user_by_role(role:Role = Query(None, description="The role you wish to look up.")):
     for user in db:
-        if user.roles == role:
-            return [usuer for user in db if user.roles == role]
+        return [user for user in db if user.roles == role]
     raise HTTPException(status_code=404, detail=f"No one with {role} found.")
+
+#this is not working...
+#search by query first name
+@app.get("/users")
+async def search_users(user_first:str = Query(None, description= "The users first name."), user_last: Optional[str] = Query(None, max_length= 15, description = "The users last name.")):
+    for user in db:
+        return [user for user in db if user.first_name == user_first and user.last_name == user_last]
+    else:
+        return [user for user in db if user.first_name == user_first]
 
 
 

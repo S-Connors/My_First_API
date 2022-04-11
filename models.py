@@ -6,12 +6,12 @@ from pydantic import BaseModel
 from enum import Enum
 
 class Pronouns(str, Enum):
-    he = "he/him"
-    she = "she/her"
-    they = "they/them"
-    zir = "ze/zir"
-    xe = "xe/xem"
-    hir = "ze/hir"
+    he = "he"
+    she = "she"
+    they = "they"
+    zir = "zir"
+    xe = "xe"
+    hir = "hir"
     per = "per"
     na = "do not wish to disclose"
 
@@ -37,4 +37,3 @@ class Updated(BaseModel):
     middle_name: Optional[str]= None
     pronouns: Optional[Pronouns]= None
     roles: Optional[List[Role]]= None
-    
