@@ -91,7 +91,9 @@ async def user_by_first_name(user_name:str = Path(None, description="The first n
 #removed / from they/them pronouns as wouldnt work in path
 #search by path pronoun
 @app.get("/users/{pronoun}")
-async def user_by_pronoun(pronoun:Pronouns = Path(None, description="The pronoun the person wishes to be called.")):
+async def user_by_pronoun(
+        pronoun:Pronouns = Path(None, description="The pronoun the person wishes to be called.")
+    ):
     for user in db:
         return [user for user in db if user.pronouns == pronoun]
     raise HTTPException(status_code=404, detail=f"Pronoun: {pronoun} not found.")
