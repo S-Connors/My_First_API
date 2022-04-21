@@ -35,7 +35,7 @@ def root():
     return {"Hello":"Welcome to my API"}
 
 #this returns all users
-@app.get("/users")
+@app.get("/users/all")
 def all_users():
     return db
 
@@ -62,7 +62,6 @@ def delete_user(user_id:UUID):
 @app.put("/users/update/{user_id}")
 def update_user(updated: UpdateRequest, user_id: UUID):
     for user in db:
-        print("working")
         if user_id == user.id:
             if updated.first_name != None:
                 user.first_name = updated.first_name
