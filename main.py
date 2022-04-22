@@ -1,14 +1,10 @@
-#run this in terminal to auto load
-#python main.py
-#Press CTRL+C to quit
-#go to http://127.0.0.1:8000
-
 import uvicorn
-from typing import Optional, List
+from typing import Optional, List, Union, Any
 from fastapi import FastAPI, Path, Query, HTTPException
 from uuid import UUID
 
-from models import User, Pronouns, Role, UpdateRequest
+from pydantic import Field
+from models import User, Pronouns, Role, UpdateRequest, UserRequestModel
 
 
 #create instance of fastapi
@@ -155,6 +151,129 @@ def user_by_user_id(
         status_code = 404,
         detail = f"User ID: '{user_id}' not found"
     )
+
+
+# -----------------------------------------------------
+
+
+# Create a single endpoint with query models
+@app.get("/v2/users")
+def get_user_with_query_model(
+        first_name: Optional[str] = Query(
+            default = None,
+            title = 'First Name',
+            description = 'The first name of the person you are searching for. '
+                'Case sensitive',
+            example = 'Stephanie',
+            max_length=100
+        ),
+        middle_name: Optional[str] = Query(
+            default = None,
+            title = 'Middle Name',
+            description = 'The middle name of the person you are searching for. '
+                'Case sensitive',
+            max_length=100
+        ),
+        last_name: Optional[str] = Query(
+            default = None,
+            title = 'Last Name',
+            description = 'The last name of the person you are searching for. '
+                'Case sensitive',
+            example='connors',
+            max_length=100
+        ),
+        pronouns: Optional[List[Pronouns]] = Query(
+            default = None,
+            title = 'Pronouns',
+            description = 'Pronoun of the person you are searching for.'
+                'Accepts a single value or a list of values',
+            example=Pronouns('she')
+        ),
+        roles: Optional[List[Role]] = Query(
+            default = None,
+            title = 'Roles',
+            description = 'Role of the person you are searching for. '
+                'Accepts a single value or a list of values',
+            example=Role('admin')
+        ),
+        limit: int = Query(
+            default = 10,
+            title = 'Limit',
+            description = 'Limit the number of returned results',
+            example = 10,
+            gt = 1
+        )
+    ):
+    """
+    Returns all users which meet an exact match to the parameters
+    passed in the query model. (Case sensitive.)
+    """
+    query_model = UserRequestModel(
+        first_name=first_name,
+        middle_name=middle_name,
+        last_name=last_name,
+        pronouns=pronouns,
+        roles=roles,
+        limit=limit
+    )
+    return post_user_with_query_model(query_model)
+
+
+
+# Create a single endpoint with query models
+@app.post("/v2/users")
+def post_user_with_query_model(query_model: UserRequestModel):
+    """
+    Returns all users which meet an exact match to the parameters
+    passed in the query model. (Case sensitive.)
+
+    Functionality of this code is complex
+    """
+    all_users = []
+    for field in User.__fields__.keys():
+
+        # Skip fields which dont match
+        if not hasattr(query_model, field):
+            continue
+
+        # Skip empty fields
+        if not getattr(query_model, field):
+            continue
+
+        if not isinstance(getattr(query_model, field), list):
+            # make sure all users match
+            all_users = [x for x in all_users if getattr(x, field) == getattr(query_model, field)]
+
+            # New people who match
+            new_users = [x for x in db if getattr(x, field) == getattr(query_model, field)]
+
+        else:
+            for value in getattr(query_model, field):
+                # What if the attribute is an array?
+
+                # make sure all users match
+                all_users = [x for x in all_users if helper_function_match(x, field, value)]
+
+                # New people who match
+                new_users = [x for x in db if helper_function_match(x, field, value)]
+
+        # Remove those who already exist
+        new_users = [x for x in new_users if x not in all_users]
+        all_users += new_users
+
+    return all_users
+
+def helper_function_match(my_user: User, field: str, value: Any):
+    """Compares a single value with either a single value or a list of values"""
+    my_value = getattr(my_user, field)
+
+    if isinstance(my_value, list):
+        return value in my_value
+    else:
+        print(my_user, my_value, value, value in my_value)
+        return value == my_value
+
+# -------------------------------------
 
 
 
